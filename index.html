@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دیوار آرزوها - Wish Wall</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Vazirmatn Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: radial-gradient(circle at bottom, #111827 0%, #030712 100%);
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        /* Glowing effects */
+        .glow-star {
+            filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.8));
+        }
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col relative">
+
+    <!-- Ambient Starry Background Effect -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-10 left-10 w-2 h-2 bg-white rounded-full opacity-60 animate-pulse glow-star"></div>
+        <div class="absolute top-40 right-20 w-3 h-3 bg-yellow-200 rounded-full opacity-40 animate-ping"></div>
+        <div class="absolute top-1/3 left-1/4 w-2 h-2 bg-white rounded-full opacity-50 animate-pulse"></div>
+        <div class="absolute top-2/3 right-1/3 w-2 h-2 bg-purple-400 rounded-full opacity-70 animate-pulse"></div>
+        <div class="absolute bottom-20 left-10 w-3 h-3 bg-blue-300 rounded-full opacity-30 animate-pulse"></div>
+    </div>
+
+    <!-- Notification System (Custom Toast) -->
+    <div id="toast-container" class="fixed top-5 left-5 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="flex-grow flex flex-col z-10 w-full max-w-6xl mx-auto px-4 py-6">
+        
+        <!-- HEADER -->
+        <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl animate-bounce">✨</span>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-amber-200 via-purple-400 to-pink-500 bg-clip-text text-transparent">دیوار آرزوها</h1>
+                    <p class="text-xs text-slate-400">جایی برای اشتراک‌گذاری و برآورده کردن رویاها</p>
+                </div>
+            </div>
+            
+            <!-- User Profile Area -->
+            <div id="user-profile-bar" class="hidden flex items-center gap-3 bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-800">
+                <img id="user-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border border-purple-500/50">
+                <div class="hidden sm:block text-right">
+                    <p id="user-display-name" class="text-xs font-bold text-slate-200"></p>
+                    <p class="text-[10px] text-amber-400">امیدوار به فردا</p>
+                </div>
+                <button id="btn-logout" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-full transition-colors" title="خروج">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- AUTH SECTION (LOGIN SCREEN) -->
+        <main id="auth-screen" class="flex-grow flex items-center justify-center py-10">
+            <div class="w-full max-w-md bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl glow-purple text-center">
+                <div class="text-5xl mb-4">🌟</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">به دنیای آرزوها خوش آمدید</h2>
+                <p class="text-sm text-slate-400 mb-8 leading-relaxed">
+                    آرزوهای خود را بنویسید تا شاید ستاره‌ای برای برآورده کردنشان پیدا شود، یا خودتان ستاره‌ای باشید در آسمان آرزوی دیگران.
+                </p>
+
+                <!-- Auth Status / Loading Info -->
+                <div id="auth-loading" class="hidden mb-4 py-2 text-sm text-purple-400">
+                    <i class="fa-solid fa-spinner animate-spin ml-2"></i> در حال ارتباط با آسمان آرزوها...
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Google Sign-In Button -->
+                    <button id="btn-google-login" class="w-full flex items-center justify-center gap-3 bg-white text-slate-900 font-bold py-3.5 px-6 rounded-2xl shadow-lg hover:bg-slate-100 active:scale-[0.98] transition-all">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24">
+                            <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.11C18.281 1.05 15.542 0 12.24 0 5.58 0 0 5.37 0 12s5.58 12 12.24 12c6.96 0 11.57-4.89 11.57-11.79 0-.795-.085-1.4-.195-1.925H12.24z"/>
+                        </svg>
+                        <span>ورود با حساب گوگل</span>
+                    </button>
+
+                    <div class="flex items-center my-6">
+                        <div class="flex-grow border-t border-slate-800"></div>
+                        <span class="mx-3 text-xs text-slate-500">یا اگر دوست دارید گمنام باشید</span>
+                        <div class="flex-grow border-t border-slate-800"></div>
+                    </div>
+
+                    <!-- Anonymous/Guest Sign-In Button (Important fallback for Github Pages iframe constraints) -->
+                    <button id="btn-guest-login" class="w-full bg-slate-800/80 border border-slate-700 text-slate-200 font-medium py-3 px-6 rounded-2xl hover:bg-slate-800 hover:text-white hover:border-slate-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-secret"></i>
+                        <span>ورود ناشناس / سریع</span>
+                    </button>
+                </div>
+
+                <div class="mt-8 text-[11px] text-slate-500">
+                    <i class="fa-solid fa-shield-halved ml-1"></i> اطلاعات شما به صورت کاملاً امن در دیتابیس ابری ثبت می‌شود.
+                </div>
+            </div>
+        </main>
+
+        <!-- APP CONTENT SECTION (DASHBOARD) -->
+        <main id="app-dashboard" class="hidden flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 py-4">
+            
+            <!-- LEFT PANEL: MAKE A WISH FORM -->
+            <section class="lg:col-span-4 space-y-6">
+                <div class="bg-gradient-to-br from-slate-900/80 to-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 shadow-xl sticky top-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-xl">✍️</span>
+                        <h3 class="text-lg font-bold text-white">ثبت آرزوی جدید</h3>
+                    </div>
+
+                    <form id="wish-form" class="space-y-4">
+                        <div>
+                            <label for="wish-title" class="block text-xs font-semibold text-slate-400 mb-1.5">عنوان آرزو (خلاصه در چند کلمه)</label>
+                            <input type="text" id="wish-title" required placeholder="مثلاً: خرید تبلت برای کودکان نیازمند" class="w-full bg-slate-950/60 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none transition-colors">
+                        </div>
+
+                        <div>
+                            <label for="wish-category" class="block text-xs font-semibold text-slate-400 mb-1.5">دسته‌بندی</label>
+                            <select id="wish-category" class="w-full bg-slate-950/60 border border-slate-800 focus:border-amber-500/50 rounded-xl px-3 py-2.5 text-sm text-white outline-none transition-colors">
+                                <option value="educational">تحصیلی و آموزشی 📚</option>
+                                <option value="financial">کمک مادی و معیشتی 🤝</option>
+                                <option value="technological">کالای دیجیتال و ابزار کار 💻</option>
+                                <option value="emotional">همیاری، معنوی و رویاها 🌱</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="wish-desc" class="block text-xs font-semibold text-slate-400 mb-1.5">داستان یا جزئیات آرزو</label>
+                            <textarea id="wish-desc" required rows="4" placeholder="توضیح دهید که این آرزو چقدر برایتان مهم است یا چگونه می‌توان آن را برآورده کرد..." class="w-full bg-slate-950/60 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none transition-colors resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" id="btn-submit-wish" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-3 rounded-xl shadow-lg shadow-amber-500/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>سپردن آرزو به دیوار</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: WISHES WALL AND SEARCH -->
+            <section class="lg:col-span-8 flex flex-col space-y-6">
+                
+                <!-- Filters and Stat Counter -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl">
+                    <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
+                        <button data-filter="all" class="btn-filter bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold px-3.5 py-1.5 rounded-lg whitespace-nowrap">همه آرزوها</button>
+                        <button data-filter="pending" class="btn-filter bg-slate-800/60 border border-slate-800 text-slate-400 hover:bg-slate-800 text-xs font-medium px-3.5 py-1.5 rounded-lg whitespace-nowrap">منتظر ستاره 💫</button>
+                        <button data-filter="fulfilled" class="btn-filter bg-slate-800/60 border border-slate-800 text-slate-400 hover:bg-slate-800 text-xs font-medium px-3.5 py-1.5 rounded-lg whitespace-nowrap">برآورده شده ✅</button>
+                        <button data-filter="my-wishes" class="btn-filter bg-slate-800/60 border border-slate-800 text-slate-400 hover:bg-slate-800 text-xs font-medium px-3.5 py-1.5 rounded-lg whitespace-nowrap">آرزوهای من</button>
+                        <button data-filter="my-granted" class="btn-filter bg-slate-800/60 border border-slate-800 text-slate-400 hover:bg-slate-800 text-xs font-medium px-3.5 py-1.5 rounded-lg whitespace-nowrap">من برآورده کردم 😇</button>
+                    </div>
+
+                    <div class="text-xs text-slate-400 shrink-0">
+                        کل آرزوها: <span id="stat-total" class="font-bold text-amber-400">۰</span>
+                    </div>
+                </div>
+
+                <!-- Wishes Grid / Loading State -->
+                <div id="wishes-loader" class="flex flex-col items-center justify-center py-20 text-slate-500">
+                    <i class="fa-solid fa-circle-notch animate-spin text-3xl mb-3 text-amber-400"></i>
+                    <p class="text-sm">در حال خواندن آرزوها از آسمان ابری...</p>
+                </div>
+
+                <!-- Empty Wall State -->
+                <div id="empty-wall-state" class="hidden flex flex-col items-center justify-center py-20 text-center bg-slate-900/20 rounded-3xl border border-dashed border-slate-800">
+                    <span class="text-4xl mb-4">🌌</span>
+                    <h4 class="text-lg font-bold text-slate-300">دیوار آرزوها خالی است!</h4>
+                    <p class="text-sm text-slate-500 max-w-sm mt-1">اولین نفری باشید که ستاره آرزوی خود را در آسمان قرار می‌دهد.</p>
+                </div>
+
+                <!-- The Wishes Container -->
+                <div id="wishes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Wish Card (JS Generated Template) -->
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="mt-auto border-t border-slate-900 pt-6 text-center text-xs text-slate-600">
+            <p>ساخته شده برای پیوند دل‌ها و برآوردن رویاها • دیتابیس آنلاین فعال</p>
+        </footer>
+    </div>
+
+    <!-- FIREBASE AND APP LOGIC -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment Variables (Provided by Canvas at runtime)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wish-wall-test-app';
+        
+        // Default Firebase Config placeholder (Will automatically work when injected by Canvas runtime)
+        const defaultFirebaseConfig = {
+            apiKey: "", 
+            authDomain: "test-wish-wall.firebaseapp.com",
+            projectId: "test-wish-wall",
+            storageBucket: "test-wish-wall.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // State variables
+        let currentUser = null;
+        let allWishes = [];
+        let activeFilter = 'all';
+
+        // UI Elements
+        const authScreen = document.getElementById('auth-screen');
+        const appDashboard = document.getElementById('app-dashboard');
+        const authLoading = document.getElementById('auth-loading');
+        const userProfileBar = document.getElementById('user-profile-bar');
+        const userAvatar = document.getElementById('user-avatar');
+        const userDisplayName = document.getElementById('user-display-name');
+        
+        const btnGoogleLogin = document.getElementById('btn-google-login');
+        const btnGuestLogin = document.getElementById('btn-guest-login');
+        const btnLogout = document.getElementById('btn-logout');
+
+        const wishForm = document.getElementById('wish-form');
+        const wishesLoader = document.getElementById('wishes-loader');
+        const emptyWallState = document.getElementById('empty-wall-state');
+        const wishesGrid = document.getElementById('wishes-grid');
+        const filterButtons = document.querySelectorAll('.btn-filter');
+        const statTotal = document.getElementById('stat-total');
+
+        // Helper: Toast Notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg transform transition-all duration-300 translate-y-2 opacity-0 text-sm ${
+                type === 'success' 
+                ? 'bg-emerald-950/90 border-emerald-800 text-emerald-300' 
+                : type === 'error' 
+                ? 'bg-rose-950/90 border-rose-800 text-rose-300' 
+                : 'bg-slate-900/90 border-slate-800 text-slate-300'
+            }`;
+            
+            const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+
+            // Trigger animation
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            // Remove Toast after delay
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Authentication Handler (Strict Rule 3)
+        async function initializeAuth() {
+            authLoading.classList.remove('hidden');
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                }
+                // Setting up listener for status changes
+                onAuthStateChanged(auth, (user) => {
+                    authLoading.classList.add('hidden');
+                    if (user) {
+                        currentUser = user;
+                        handleSignedInState(user);
+                    } else {
+                        currentUser = null;
+                        handleSignedOutState();
+                    }
+                });
+            } catch (error) {
+                console.error("Auth init error:", error);
+                authLoading.classList.add('hidden');
+                showToast("خطا در همگام‌سازی ارتباط با سرویس ابری", "error");
+            }
+        }
+
+        // Login Methods
+        btnGoogleLogin.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                authLoading.classList.remove('hidden');
+                await signInWithPopup(auth, provider);
+                showToast("خوش آمدید! با موفقیت وارد حساب خود شدید.", "success");
+            } catch (error) {
+                console.error("Google Auth error:", error);
+                authLoading.classList.add('hidden');
+                showToast("ورود با گوگل انجام نشد. می‌توانید از ورود ناشناس استفاده کنید.", "error");
+            }
+        });
+
+        btnGuestLogin.addEventListener('click', async () => {
+            try {
+                authLoading.classList.remove('hidden');
+                await signInAnonymously(auth);
+                showToast("به عنوان کاربر مهمان خوش آمدید!", "success");
+            } catch (error) {
+                console.error("Anonymous Auth error:", error);
+                authLoading.classList.add('hidden');
+                showToast("امکان برقراری ارتباط ناشناس در این لحظه وجود ندارد.", "error");
+            }
+        });
+
+        btnLogout.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showToast("خداحافظ! به امید دیدار دوباره.", "info");
+            } catch (error) {
+                showToast("خطا در فرآیند خروج.", "error");
+            }
+        });
+
+        // App state UI managers
+        function handleSignedInState(user) {
+            authScreen.classList.add('hidden');
+            appDashboard.classList.remove('hidden');
+            userProfileBar.classList.remove('hidden');
+
+            // Set user profile visuals
+            userDisplayName.textContent = user.displayName || `آرزومند گمنام (${user.uid.slice(0, 4)})`;
+            userAvatar.src = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+
+            // Load wishes (Strict Rules: Path / Query restrictions)
+            loadWishesRealtime();
+        }
+
+        function handleSignedOutState() {
+            authScreen.classList.remove('remove');
+            appDashboard.classList.add('hidden');
+            userProfileBar.classList.add('hidden');
+            authScreen.classList.remove('hidden');
+            wishesGrid.innerHTML = '';
+        }
+
+        // FIRESTORE OPERATIONS (Rule 1: Path structure, Rule 2: Simple Query)
+        function loadWishesRealtime() {
+            if (!currentUser) return;
+
+            wishesLoader.classList.remove('hidden');
+            emptyWallState.classList.add('hidden');
+
+            // Rule 1: Public data path
+            const wishesCollection = collection(db, 'artifacts', appId, 'public', 'data', 'wishes');
+            
+            // Rule 2: Fetch all data with simple query, filter in-memory to prevent indexing errors
+            onSnapshot(wishesCollection, (snapshot) => {
+                allWishes = [];
+                snapshot.forEach((doc) => {
+                    allWishes.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Sort wishes by timestamp descending (newest first)
+                allWishes.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                wishesLoader.classList.add('hidden');
+                renderWishes();
+            }, (error) => {
+                console.error("Firestore loading error:", error);
+                wishesLoader.classList.add('hidden');
+                showToast("خطا در دریافت لیست آرزوها از دیتابیس.", "error");
+            });
+        }
+
+        // Wish Form Submission
+        wishForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const title = document.getElementById('wish-title').value.trim();
+            const category = document.getElementById('wish-category').value;
+            const desc = document.getElementById('wish-desc').value.trim();
+            const btnSubmit = document.getElementById('btn-submit-wish');
+
+            if (!title || !desc) {
+                showToast("لطفاً فیلدهای ستاره‌دار را پر کنید.", "error");
+                return;
+            }
+
+            try {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>در حال ارسال...</span>`;
+
+                const wishesCollection = collection(db, 'artifacts', appId, 'public', 'data', 'wishes');
+                
+                await addDoc(wishesCollection, {
+                    title,
+                    category,
+                    desc,
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName || `آرزومند گمنام`,
+                    userAvatar: currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+                    status: 'pending', // pending, granted
+                    grantedBy: null,
+                    grantedByName: null,
+                    grantedByAvatar: null,
+                    createdAt: Date.now()
+                });
+
+                showToast("آرزوی زیبای شما روی دیوار ثبت شد 🌟", "success");
+                wishForm.reset();
+            } catch (error) {
+                console.error("Error creating wish:", error);
+                showToast("خطا در ثبت آرزو بر روی سرور.", "error");
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>سپردن آرزو به دیوار</span>`;
+            }
+        });
+
+        // Granting/Fulfilling a Wish
+        window.grantWish = async function(wishId) {
+            if (!currentUser) return;
+            
+            try {
+                const wishDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'wishes', wishId);
+                const wishSnap = await getDoc(wishDocRef);
+                
+                if (wishSnap.exists()) {
+                    const wishData = wishSnap.data();
+                    
+                    if (wishData.userId === currentUser.uid) {
+                        showToast("شما نمی‌توانید آرزوی خودتان را برآورده کنید!", "error");
+                        return;
+                    }
+
+                    await updateDoc(wishDocRef, {
+                        status: 'granted',
+                        grantedBy: currentUser.uid,
+                        grantedByName: currentUser.displayName || `ستاره گمنام`,
+                        grantedByAvatar: currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`
+                    });
+
+                    showToast("فرشته مهربانی! اعلام آمادگی شما با موفقیت ثبت شد 😇", "success");
+                }
+            } catch (error) {
+                console.error("Error granting wish:", error);
+                showToast("خطا در ثبت آمادگی شما بر روی سرور.", "error");
+            }
+        }
+
+        // Cancel Granting a Wish (If they want to step back or let someone else do it)
+        window.cancelGrantWish = async function(wishId) {
+            if (!currentUser) return;
+
+            try {
+                const wishDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'wishes', wishId);
+                const wishSnap = await getDoc(wishDocRef);
+
+                if (wishSnap.exists()) {
+                    const wishData = wishSnap.data();
+                    if (wishData.grantedBy !== currentUser.uid) return;
+
+                    await updateDoc(wishDocRef, {
+                        status: 'pending',
+                        grantedBy: null,
+                        grantedByName: null,
+                        grantedByAvatar: null
+                    });
+
+                    showToast("انصراف شما ثبت شد. آرزو مجدداً به دیوار برگشت.", "info");
+                }
+            } catch (error) {
+                console.error("Error canceling grant:", error);
+            }
+        }
+
+        // Render Wishes cards
+        function renderWishes() {
+            wishesGrid.innerHTML = '';
+            
+            // In-memory Filter Application (Rule 2 Constraint workaround)
+            const filtered = allWishes.filter(wish => {
+                if (activeFilter === 'pending') return wish.status === 'pending';
+                if (activeFilter === 'fulfilled') return wish.status === 'granted';
+                if (activeFilter === 'my-wishes') return wish.userId === currentUser.uid;
+                if (activeFilter === 'my-granted') return wish.grantedBy === currentUser.uid;
+                return true; // 'all'
+            });
+
+            statTotal.textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                emptyWallState.classList.remove('hidden');
+                return;
+            }
+
+            emptyWallState.classList.add('hidden');
+
+            filtered.forEach(wish => {
+                const isMyWish = wish.userId === currentUser.uid;
+                const isGrantedByMe = wish.grantedBy === currentUser.uid;
+                
+                const card = document.createElement('div');
+                card.className = `p-5 rounded-2xl border transition-all duration-300 relative flex flex-col justify-between ${
+                    wish.status === 'granted' 
+                    ? 'bg-emerald-950/20 border-emerald-900/60 shadow-md shadow-emerald-950/20' 
+                    : 'bg-slate-900/40 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+                }`;
+
+                // Categories Badge map
+                const categoryNames = {
+                    educational: 'آموزشی 📚',
+                    financial: 'حمایت مادی 🤝',
+                    technological: 'دیجیتال 💻',
+                    emotional: 'روحی و رویاها 🌱'
+                };
+
+                const dateString = wish.createdAt ? new Date(wish.createdAt).toLocaleDateString('fa-IR') : 'به تازگی';
+
+                let actionButton = '';
+                if (wish.status === 'pending') {
+                    if (isMyWish) {
+                        actionButton = `<span class="text-xs text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20 block text-center">منتظر یک ستاره مهربان 💫</span>`;
+                    } else {
+                        actionButton = `
+                            <button onclick="grantWish('${wish.id}')" class="w-full bg-slate-800 hover:bg-emerald-600 hover:text-white border border-slate-700 hover:border-emerald-500 text-slate-300 font-bold py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-2 active:scale-95">
+                                <i class="fa-solid fa-hand-holding-heart"></i>
+                                <span>برآورده می‌کنم!</span>
+                            </button>
+                        `;
+                    }
+                } else { // status === 'granted'
+                    if (isGrantedByMe) {
+                        actionButton = `
+                            <div class="space-y-2">
+                                <span class="text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 block text-center font-bold">بوسیله شما تقبل شد ❤️</span>
+                                <button onclick="cancelGrantWish('${wish.id}')" class="w-full text-slate-500 hover:text-rose-400 text-[10px] text-center transition-colors">انصراف از برآورده کردن</button>
+                            </div>
+                        `;
+                    } else {
+                        actionButton = `
+                            <div class="flex items-center gap-2 bg-emerald-950/50 border border-emerald-900/30 p-2.5 rounded-xl">
+                                <img src="${wish.grantedByAvatar || 'https://api.dicebear.com/7.x/bottts/svg'}" alt="Grantor" class="w-6 h-6 rounded-full">
+                                <div class="text-[10px] text-emerald-300">
+                                    <span>تقبل شده توسط:</span>
+                                    <span class="font-bold block">${wish.grantedByName || 'ستاره مهربان'}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Header Card Info -->
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded-md border border-slate-700/50">${categoryNames[wish.category] || 'آرزو'}</span>
+                            <span class="text-[10px] text-slate-500">${dateString}</span>
+                        </div>
+
+                        <!-- Title & Description -->
+                        <h4 class="text-sm font-bold text-slate-100 mb-2 leading-snug">${wish.title}</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4 whitespace-pre-wrap">${wish.desc}</p>
+                    </div>
+
+                    <!-- Card Footer: Author & Actions -->
+                    <div class="border-t border-slate-800/80 pt-4 mt-2 space-y-4">
+                        <div class="flex items-center gap-2.5">
+                            <img src="${wish.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg'}" alt="Wisher" class="w-7 h-7 rounded-full border border-slate-800">
+                            <div class="text-[10px] text-slate-400">
+                                <span>آرزویِ:</span>
+                                <span class="font-bold text-slate-300 block">${wish.userName}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            ${actionButton}
+                        </div>
+                    </div>
+                `;
+                wishesGrid.appendChild(card);
+            });
+        }
+
+        // Filtering Actions
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Remove active classes
+                filterButtons.forEach(b => {
+                    b.className = "btn-filter bg-slate-800/60 border border-slate-800 text-slate-400 hover:bg-slate-800 text-xs font-medium px-3.5 py-1.5 rounded-lg whitespace-nowrap";
+                });
+
+                // Add active classes to selected
+                btn.className = "btn-filter bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold px-3.5 py-1.5 rounded-lg whitespace-nowrap";
+                
+                activeFilter = btn.getAttribute('data-filter');
+                renderWishes();
+            });
+        });
+
+        // Initialize Everything
+        window.onload = function() {
+            initializeAuth();
+        };
+    </script>
+</body>
+</html>
